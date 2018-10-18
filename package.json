@@ -1,0 +1,17 @@
+{
+  "name": "project-sedona",
+  "private": true,
+  "description": "",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liuxh0/project-sedona.git"
+  },
+  "author": "",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}
