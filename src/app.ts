@@ -1,4 +1,5 @@
 import express from 'express';
+import * as readline from 'readline';
 import * as availability from './api/availability';
 import { DatabaseUtils } from './database-utils';
 
@@ -13,7 +14,18 @@ app.get(`${pathPrefix}/availability`, availability.get);
     console.warn('WARNING: Connection to database fails.')
   }
 
-  app.listen(80, () => {
-    console.log('app started');
+  const server = app.listen(80, () => {
+    console.log('server started');
+
+    process.on('SIGINT', (signal) => {
+      // Clear ^C output
+      readline.clearLine(process.stdout, 0);
+      readline.cursorTo(process.stdout, 0);
+
+      console.log('closing server');
+      server.close(() => {
+        process.exit();
+      });
+    });
   });
 })();
