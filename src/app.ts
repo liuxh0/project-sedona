@@ -1,31 +1,37 @@
-import express from 'express';
-import * as readline from 'readline';
+import express, { Express } from 'express';
+import { Server } from 'http';
 import * as availability from './api/availability';
 import { DatabaseUtils } from './database-utils';
 
-const pathPrefix = '/api/sedona/v1';
+export class App {
+  private readonly port = 80;
+  private readonly pathPrefix = '/api/sedona/v1';
 
-const app = express();
-app.get(`${pathPrefix}/availability`, availability.get);
+  private app: Express;
+  private server: Server | undefined;
 
-(async () => {
-  const databaseReady = await DatabaseUtils.tryConnection();
-  if (databaseReady === false) {
-    console.warn('WARNING: Connection to database fails.')
+  constructor() {
+    this.app = express();
+    this.app.get(`${this.pathPrefix}/availability`, availability.get);
   }
 
-  const server = app.listen(80, () => {
-    console.log('server started');
+  async start(): Promise<void> {
+    const databaseReady = await DatabaseUtils.tryConnection();
+    if (databaseReady === false) {
+      // TODO: use logger
+      console.warn('WARNING: Connection to database fails.');
+    }
 
-    process.on('SIGINT', (signal) => {
-      // Clear ^C output
-      readline.clearLine(process.stdout, 0);
-      readline.cursorTo(process.stdout, 0);
-
-      console.log('closing server');
-      server.close(() => {
-        process.exit();
-      });
+    return new Promise<void>(resolve => {
+      this.server = this.app.listen(this.port, () => resolve());
     });
-  });
-})();
+  }
+
+  stop(): Promise<void> {
+    return new Promise(resolve => {
+      if (this.server) {
+        this.server.close(() => resolve());
+      }
+    });
+  }
+}
