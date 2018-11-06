@@ -1,35 +1,43 @@
 import * as readline from 'readline';
+import { Logger } from './logger';
 
 export class CommandLine {
+  private readonly prompt = '>> ';
+
   private rl: readline.ReadLine;
   private commands: Map<string, CommandCallback>;
 
-  constructor() {
+  constructor(private logger: Logger) {
     this.commands = new Map();
     this.registerBuildinCommands();
 
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: '>> '
+      prompt: this.prompt
     });
 
     this.rl.on('SIGINT', () => {
       // Do nothing
-    }).on('line', input => {
+    }).on('line', async input => {
+      this.logger.console(this.prompt + input);
+
       if (this.commands.has(input)) {
         this.rl.pause();
+
         const callback = this.commands.get(input)!;
-        const callbackReturn = callback(message => console.log(message));
-        Promise.resolve(callbackReturn).then(() => {
-          console.log();
-          this.rl.prompt();
-        });
+        const callbackReturn = callback(message => this.output(message));
+        await Promise.resolve(callbackReturn);
       } else {
-        console.log('Unknown command\n');
-        this.rl.prompt();
+        this.output('Unknown command');
       }
+
+      this.output();  // Print an empty line to separate commands
+      this.rl.prompt();
     });
+
+    // Take over control at start
+    this.rl.pause();
   }
 
   /**
@@ -44,6 +52,15 @@ export class CommandLine {
    */
   pause(): void {
     this.rl.pause();
+  }
+
+  output(message?: string): void {
+    if (message) {
+      console.log(message);
+      this.logger.console(message);
+    } else {
+      console.log();
+    }
   }
 
   registerCommand(command: string, callback: CommandCallback): void {

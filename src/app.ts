@@ -18,8 +18,7 @@ export class App {
   async start(): Promise<void> {
     const databaseReady = await DatabaseUtils.tryConnection();
     if (databaseReady === false) {
-      // TODO: use logger
-      console.warn('WARNING: Connection to database fails.');
+      throw 'Connection to database failed';
     }
 
     return new Promise<void>(resolve => {
